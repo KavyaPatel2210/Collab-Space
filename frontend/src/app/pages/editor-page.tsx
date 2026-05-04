@@ -10,8 +10,7 @@ import { Button, Avatar, Badge, Input, Modal, cn } from "../components/ui-compon
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "../contexts/AuthContext";
-import axios from "axios";
-import { API_URL } from "../config";
+import API from "../lib/api";
 import { Socket } from "socket.io-client";
 import { getSocket } from "../lib/socket";
 import { useNotifications } from "../hooks/useNotifications";
@@ -67,7 +66,7 @@ export function EditorPage() {
     if (!id || !user) return;
     const fetchDoc = async () => {
       try {
-        const res = await axios.get(`${API_URL}/api/documents/${id}`);
+        const res = await API.get(`/api/documents/${id}`);
         setDoc(res.data);
         setEditableTitle(res.data.title);
         
@@ -88,7 +87,7 @@ export function EditorPage() {
 
     const fetchChat = async () => {
       try {
-        const res = await axios.get(`${API_URL}/api/chat/${id}/messages`);
+        const res = await API.get(`/api/chat/${id}/messages`);
         setMessages(res.data);
       } catch (err) {
         console.error("Failed to load chat", err);
@@ -199,7 +198,7 @@ export function EditorPage() {
   const saveDoc = async (content: string, title?: string) => {
     setSaving(true);
     try {
-      await axios.put(`${API_URL}/api/documents/${id}`, {
+      await API.put(`/api/documents/${id}`, {
         content,
         title
       });
@@ -279,7 +278,7 @@ export function EditorPage() {
     if (!shareEmail.trim()) return;
     setShareLoading(true);
     try {
-      const res = await axios.post(`${API_URL}/api/documents/${id}/collaborators`, {
+      const res = await API.post(`/api/documents/${id}/collaborators`, {
         email: shareEmail.trim(),
         role: shareRole
       });

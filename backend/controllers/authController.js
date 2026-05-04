@@ -17,6 +17,12 @@ exports.register = async (req, res) => {
     const payload = { user: { id: user.id } };
     jwt.sign(payload, process.env.JWT_SECRET || 'secret123', { expiresIn: 360000 }, (err, token) => {
       if (err) throw err;
+      res.cookie("token", token, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "None",
+        maxAge: 360000 * 1000
+      });
       res.json({ token, user: { id: user.id, name: user.name, email: user.email } });
     });
   } catch (err) {
@@ -40,6 +46,12 @@ exports.login = async (req, res) => {
     const payload = { user: { id: user.id } };
     jwt.sign(payload, process.env.JWT_SECRET || 'secret123', { expiresIn: 360000 }, (err, token) => {
       if (err) throw err;
+      res.cookie("token", token, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "None",
+        maxAge: 360000 * 1000
+      });
       res.json({ token, user: { id: user.id, name: user.name, email: user.email } });
     });
   } catch (err) {

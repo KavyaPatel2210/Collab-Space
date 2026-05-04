@@ -6,8 +6,7 @@ import { toast } from "sonner";
 import { motion } from "motion/react";
 import { useAuth } from "../contexts/AuthContext";
 import { Logo } from "../components/Logo";
-import axios from "axios";
-import { API_URL } from "../config";
+import API from "../lib/api";
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -43,7 +42,7 @@ export function LoginPage() {
           setIsLoading(false);
           return;
         }
-        const res = await axios.post("http://localhost:5000/api/auth/register", {
+        const res = await API.post("/api/auth/register", {
           name: displayName.trim(),
           email,
           password
@@ -51,7 +50,7 @@ export function LoginPage() {
         login(res.data.token, res.data.user);
         toast.success("Account created! Welcome to CollabSpace!");
       } else {
-        const res = await axios.post("http://localhost:5000/api/auth/login", {
+        const res = await API.post("/api/auth/login", {
           email,
           password
         });

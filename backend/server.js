@@ -18,12 +18,15 @@ app.set('io', io);
 
 // Middleware
 const corsOptions = {
-  origin: process.env.CLIENT_URL || "*",
+  origin: "https://collab-space-liart.vercel.app",
+  credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"]
 };
 app.use(cors(corsOptions));
 app.use(express.json());
+const cookieParser = require('cookie-parser');
+app.use(cookieParser());
 
 // DB Config
 const db = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/collabspace';

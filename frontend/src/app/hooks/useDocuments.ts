@@ -1,6 +1,5 @@
 import * as React from "react";
-import axios from "axios";
-import { API_URL } from "../config";
+import API from "../lib/api";
 import { useAuth } from "../contexts/AuthContext";
 
 export interface CollabDocument {
@@ -33,7 +32,7 @@ export function useDocuments() {
         const fetchDocs = async () => {
             setLoading(true);
             try {
-                const res = await axios.get(`${API_URL}/api/documents`);
+                const res = await API.get("/api/documents");
                 const mappedDocs = res.data.map((doc: any) => ({
                     ...doc,
                     id: doc._id
@@ -64,7 +63,7 @@ export function useDocuments() {
     const createDocument = async (title: string): Promise<string> => {
         if (!user) throw new Error("User must be authenticated");
 
-        const res = await axios.post(`${API_URL}/api/documents`, {
+        const res = await API.post("/api/documents", {
             title: title.trim(),
             content: ""
         });

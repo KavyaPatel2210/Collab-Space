@@ -1,8 +1,13 @@
 const jwt = require('jsonwebtoken');
 
 module.exports = function (req, res, next) {
-  // Get token from header
-  const token = req.header('Authorization');
+  // Get token from header or cookie
+  let token = req.header('Authorization');
+  if (token && token.startsWith('Bearer ')) {
+    token = token.split(' ')[1];
+  } else if (req.cookies && req.cookies.token) {
+    token = req.cookies.token;
+  }
 
   // Check if no token
   if (!token) {

@@ -1,6 +1,5 @@
 import * as React from "react";
-import axios from "axios";
-import { API_URL } from "../config";
+import API from "../lib/api";
 import { useAuth } from "../contexts/AuthContext";
 import { getSocket } from "../lib/socket";
 import { toast } from "sonner";
@@ -25,7 +24,7 @@ export function useNotifications() {
   const fetchNotifications = React.useCallback(async () => {
     if (!user) return;
     try {
-      const res = await axios.get(`${API_URL}/api/notifications`);
+      const res = await API.get("/api/notifications");
       setNotifications(res.data);
       setUnreadCount(res.data.filter((n: Notification) => !n.read).length);
     } catch (err) {
@@ -83,7 +82,7 @@ export function useNotifications() {
 
   const markAsRead = async (id: string) => {
     try {
-      await axios.put(`${API_URL}/api/notifications/${id}/read`);
+      await API.put(`/api/notifications/${id}/read`);
       setNotifications(prev => prev.map(n => n._id === id ? { ...n, read: true } : n));
       setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (err) {
@@ -93,7 +92,7 @@ export function useNotifications() {
 
   const markAllAsRead = async () => {
     try {
-      await axios.put(`${API_URL}/api/notifications/read-all`);
+      await API.put("/api/notifications/read-all");
       setNotifications(prev => prev.map(n => ({ ...n, read: true })));
       setUnreadCount(0);
     } catch (err) {

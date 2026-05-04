@@ -9,8 +9,7 @@ import { toast } from "sonner";
 import { motion } from "motion/react";
 import { useDocuments } from "../hooks/useDocuments";
 import { useAuth } from "../contexts/AuthContext";
-import axios from "axios";
-import { API_URL } from "../config";
+import API from "../lib/api";
 
 type TabKey = "my-documents" | "shared-with-me" | "settings";
 
@@ -95,7 +94,7 @@ export function DashboardPage() {
     e.stopPropagation();
     if (!confirm("Are you sure you want to delete this document?")) return;
     try {
-      await axios.delete(`${API_URL}/api/documents/${docId}`);
+      await API.delete(`/api/documents/${docId}`);
       setDocuments(prev => prev.filter(d => d._id !== docId && d.id !== docId));
       toast.success("Document deleted.");
     } catch (err) {
