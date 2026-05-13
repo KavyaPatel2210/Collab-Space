@@ -25,7 +25,7 @@ export function Navbar({ isDarkMode, onToggleDarkMode }: NavbarProps) {
 
     // Auth — may be null on public pages
     let currentUser = null;
-    let logout: () => void = () => { };
+    let logout: () => Promise<void> = async () => { };
     try {
         const auth = useAuth();
         currentUser = auth.user;
@@ -40,9 +40,9 @@ export function Navbar({ isDarkMode, onToggleDarkMode }: NavbarProps) {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
         try {
-            logout();
+            await logout();
             toast.success("Logged out successfully.");
             navigate("/");
         } catch (err) {

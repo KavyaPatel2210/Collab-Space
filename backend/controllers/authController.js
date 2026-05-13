@@ -69,3 +69,12 @@ exports.getUser = async (req, res) => {
     res.status(500).send('Server Error');
   }
 };
+
+exports.logout = (req, res) => {
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: true,
+    sameSite: "None"
+  });
+  res.json({ msg: 'Logged out successfully' });
+};
