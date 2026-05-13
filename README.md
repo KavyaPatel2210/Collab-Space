@@ -12,7 +12,6 @@
 - **Real-time Collaboration**: Multiple users can edit the same document simultaneously with zero lag.
 - **Instant Team Chat**: Embedded chat window for seamless team communication without leaving the workspace.
 - **Push Notifications (PWA)**: Cross-platform Web Push notifications keep you updated on document shares and mentions, even when offline.
-- **AI Assistant Integration**: Powered by Google Gemini AI for intelligent content generation.
 - **Smart Security**: Role-based access control (Owner, Editor, Viewer) to keep your documents safe.
 - **Modern UI/UX**: Premium glassmorphic design with a dedicated Dark Mode and smooth animations.
 - **Cloud Sync**: All changes are automatically saved to a MongoDB cluster.
