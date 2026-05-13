@@ -50,6 +50,11 @@ export function useNotifications() {
       if (socket.connected) identify();
       socket.on('connect', identify);
 
+      // Request notification permission if supported
+      if ("Notification" in window && Notification.permission === "default") {
+        Notification.requestPermission();
+      }
+
       const handleNewNotification = (notif: Notification) => {
         // Ignore notifications from ourselves
         if (notif.fromUser?._id === user.id) return;
@@ -60,6 +65,36 @@ export function useNotifications() {
         });
         setUnreadCount(prev => prev + 1);
         
+        // Native System Notification
+        if ("Notification" in window && Notification.permission === "granted") {
+          try {
+            // Check if service worker is ready to use its notification (works better on Android)
+            navigator.serviceWorker.ready.then((registration) => {
+              registration.showNotification(notif.title, {
+                body: notif.message,
+                icon: '/icon-192.png',
+                data: {
+                  url: notif.documentId ? `/editor/${notif.documentId}?tab=chat` : '/'
+                }
+              });
+            }).catch(() => {
+              // Fallback to basic Notification API
+              const n = new window.Notification(notif.title, {
+                body: notif.message,
+                icon: '/icon-192.png',
+              });
+              if (notif.documentId) {
+                n.onclick = () => {
+                  window.focus();
+                  window.location.href = `/editor/${notif.documentId}?tab=chat`;
+                };
+              }
+            });
+          } catch (e) {
+            console.error("Native notification failed:", e);
+          }
+        }
+
         toast.info(notif.title, {
           description: notif.message,
           action: notif.documentId ? {

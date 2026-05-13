@@ -1,9 +1,10 @@
 import * as React from "react";
 import { Link, useLocation, useNavigate } from "react-router";
-import { Sun, Moon, LogOut } from "lucide-react";
+import { Sun, Moon, LogOut, Download } from "lucide-react";
 import { Button, Avatar, cn } from "./ui-components";
 import { Logo } from "./Logo";
 import { useAuth } from "../contexts/AuthContext";
+import { usePWA } from "../hooks/usePWA";
 import { toast } from "sonner";
 
 interface NavbarProps {
@@ -20,10 +21,11 @@ export function Navbar({ isDarkMode, onToggleDarkMode }: NavbarProps) {
     const navigate = useNavigate();
     const isLogin = location.pathname === "/login";
     const [scrolled, setScrolled] = React.useState(false);
+    const { isInstallable, isStandalone, installPWA } = usePWA();
 
     // Auth — may be null on public pages
     let currentUser = null;
-    let logout: () => Promise<void> = async () => { };
+    let logout: () => void = () => { };
     try {
         const auth = useAuth();
         currentUser = auth.user;
@@ -38,9 +40,9 @@ export function Navbar({ isDarkMode, onToggleDarkMode }: NavbarProps) {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
-    const handleLogout = async () => {
+    const handleLogout = () => {
         try {
-            await logout();
+            logout();
             toast.success("Logged out successfully.");
             navigate("/");
         } catch (err) {
@@ -82,6 +84,17 @@ export function Navbar({ isDarkMode, onToggleDarkMode }: NavbarProps) {
 
                 {/* Right actions */}
                 <div className="flex items-center gap-2">
+                    {isInstallable && !isStandalone && (
+                        <Button 
+                            size="sm" 
+                            onClick={installPWA}
+                            className="bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-2"
+                        >
+                            <Download className="w-4 h-4" />
+                            <span className="hidden md:inline">Install App</span>
+                        </Button>
+                    )}
+
                     <button
                         onClick={onToggleDarkMode}
                         className="p-2 hover:bg-[rgba(139,92,246,0.08)] rounded-[10px] transition-all duration-200"
