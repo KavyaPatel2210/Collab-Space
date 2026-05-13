@@ -23,7 +23,7 @@ export function Navbar({ isDarkMode, onToggleDarkMode }: NavbarProps) {
 
     // Auth — may be null on public pages
     let currentUser = null;
-    let logout = async () => { };
+    let logout: () => Promise<void> = async () => { };
     try {
         const auth = useAuth();
         currentUser = auth.user;

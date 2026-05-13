@@ -1,7 +1,7 @@
 import * as React from "react";
 import {
   Plus, Search, FileText, MoreVertical, Share2, Clock, Users,
-  Trash2, Loader2, AlertCircle, FolderOpen, Settings, User, Lock, Mail, Palette, ChevronRight, Sparkles
+  Trash2, Loader2, AlertCircle, FolderOpen, Settings, User, Lock, Mail, Palette, ChevronRight, Sparkles, LogOut
 } from "lucide-react";
 import { Button, Input, Badge, Avatar, Modal, cn } from "../components/ui-components";
 import { useNavigate, useSearchParams } from "react-router";
@@ -102,6 +102,18 @@ export function DashboardPage() {
     }
   };
 
+  const handleLeaveDocument = async (e: React.MouseEvent, docId: string) => {
+    e.stopPropagation();
+    if (!confirm("Remove this shared document from your list? You'll lose access to it.")) return;
+    try {
+      await API.delete(`/api/documents/${docId}/collaborators/me`);
+      setDocuments(prev => prev.filter(d => d._id !== docId && d.id !== docId));
+      toast.success("You have left the document.");
+    } catch (err: any) {
+      toast.error(err.response?.data?.msg || "Failed to leave document.");
+    }
+  };
+
   const handleSaveSettings = async () => {
     if (!user || !settingsName.trim()) return;
     setSavingSettings(true);
@@ -184,7 +196,7 @@ export function DashboardPage() {
   }
 
   return (
-    <div className="p-6 md:p-8 max-w-6xl mx-auto">
+    <div className="p-4 sm:p-6 md:p-8 max-w-6xl mx-auto pb-28 md:pb-8">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
         <div>
@@ -402,12 +414,21 @@ export function DashboardPage() {
                         <FileText className="w-5 h-5" />
                       </div>
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        {isOwner && (
+                        {isOwner ? (
                           <button
                             onClick={(e) => handleDeleteDocument(e, docItem.id)}
                             className="p-2 hover:bg-[rgba(239,68,68,0.08)] rounded-[10px] text-[#6B7280] hover:text-[#EF4444] transition-colors"
+                            title="Delete document"
                           >
                             <Trash2 className="w-4 h-4" />
+                          </button>
+                        ) : (
+                          <button
+                            onClick={(e) => handleLeaveDocument(e, docItem.id)}
+                            className="p-2 hover:bg-[rgba(239,68,68,0.08)] rounded-[10px] text-[#6B7280] hover:text-[#EF4444] transition-colors"
+                            title="Leave document"
+                          >
+                            <LogOut className="w-4 h-4" />
                           </button>
                         )}
                         <button className="p-2 hover:bg-[rgba(139,92,246,0.06)] rounded-[10px] text-[#6B7280]">
@@ -465,7 +486,7 @@ export function DashboardPage() {
       )}
 
       {/* Floating Action Button (Mobile) */}
-      <div className="fixed bottom-8 right-8 md:hidden">
+      <div className="fixed bottom-24 right-5 md:hidden z-40">
         <button
           onClick={handleQuickCreate}
           disabled={isCreating}

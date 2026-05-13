@@ -9,5 +9,6 @@ router.get('/:id', auth, documentController.getDocumentById);
 router.put('/:id', auth, documentController.updateDocument);
 router.delete('/:id', auth, documentController.deleteDocument);
 router.post('/:id/collaborators', auth, documentController.addCollaborator);
+router.delete('/:id/collaborators/me', auth, documentController.leaveDocument);
 
 module.exports = router;

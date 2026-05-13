@@ -166,3 +166,30 @@ exports.addCollaborator = async (req, res) => {
     res.status(500).send('Server Error');
   }
 };
+
+exports.leaveDocument = async (req, res) => {
+  try {
+    const doc = await Document.findById(req.params.id);
+    if (!doc) return res.status(404).json({ msg: 'Document not found' });
+
+    // Owner cannot "leave" — they must delete the document instead
+    if (doc.owner.toString() === req.user.id) {
+      return res.status(400).json({ msg: 'You are the owner. Delete the document instead.' });
+    }
+
+    const before = doc.collaborators.length;
+    doc.collaborators = doc.collaborators.filter(
+      c => c.userId.toString() !== req.user.id
+    );
+
+    if (doc.collaborators.length === before) {
+      return res.status(400).json({ msg: 'You are not a collaborator on this document.' });
+    }
+
+    await doc.save();
+    res.json({ msg: 'You have left the document.' });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+};

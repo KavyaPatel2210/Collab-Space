@@ -355,7 +355,8 @@ export function EditorPage() {
           <div className="flex items-center gap-2">
             <div className="relative group">
               <Button variant="glass" size="sm">
-                <Download className="w-4 h-4 mr-2" /> Export
+                <Download className="w-4 h-4 md:mr-2" />
+                <span className="hidden md:inline">Export</span>
               </Button>
               <div className="absolute right-0 top-full mt-1 hidden group-hover:block bg-white dark:bg-[#1E1B4B] border border-gray-200 dark:border-white/10 rounded-lg shadow-xl py-1 min-w-[140px] z-50">
                 <button onClick={exportDOCX} className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-white/5 dark:text-gray-200 flex items-center gap-2">
@@ -380,7 +381,8 @@ export function EditorPage() {
 
             {userRole === "owner" && (
               <Button size="sm" onClick={() => setIsShareModalOpen(true)} className="bg-indigo-600 hover:bg-indigo-700">
-                <Share2 className="w-4 h-4 mr-2" /> Share
+                <Share2 className="w-4 h-4 md:mr-2" />
+                <span className="hidden md:inline">Share</span>
               </Button>
             )}
             <div className="w-px h-6 bg-gray-200 mx-1" />
@@ -434,7 +436,7 @@ export function EditorPage() {
       <div className="flex-1 flex overflow-hidden relative bg-gray-100 dark:bg-[#0A0914]">
         {/* 2. MIDDLE - DOCUMENT EDITOR */}
         <div className="flex-1 overflow-auto p-4 md:p-10 flex flex-col items-center">
-          <div className="max-w-4xl w-full bg-white dark:bg-[#1E1B4B] min-h-[1056px] rounded-sm shadow-2xl p-[96px] mb-10 transition-all duration-300 ring-1 ring-gray-200 dark:ring-white/10">
+          <div className="max-w-4xl w-full bg-white dark:bg-[#1E1B4B] min-h-[600px] md:min-h-[1056px] rounded-sm shadow-2xl p-6 sm:p-12 md:p-[96px] mb-10 transition-all duration-300 ring-1 ring-gray-200 dark:ring-white/10">
             <div
               ref={editorRef}
               contentEditable={canEdit}
@@ -453,7 +455,7 @@ export function EditorPage() {
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: 320, opacity: 0 }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="w-80 border-l border-gray-200 dark:border-white/10 bg-white dark:bg-[#0F0D1F] flex flex-col shadow-xl z-30"
+              className="absolute inset-0 md:relative md:inset-auto md:w-80 border-l border-gray-200 dark:border-white/10 bg-white dark:bg-[#0F0D1F] flex flex-col shadow-xl z-30"
             >
               <div className="p-4 border-b border-gray-200 dark:border-white/10 font-bold flex justify-between items-center bg-white dark:bg-[#0F0D1F] sticky top-0 z-10">
                 <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400">

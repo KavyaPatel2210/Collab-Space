@@ -20,7 +20,7 @@ export function RootLayout() {
 
   // Auth — may be null on public pages (landing/login)
   let currentUser = null;
-  let logout: () => void = () => { };
+  let logout: () => Promise<void> = async () => { };
   try {
     const auth = useAuth();
     currentUser = auth.user;

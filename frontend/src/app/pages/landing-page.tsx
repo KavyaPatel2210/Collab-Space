@@ -48,7 +48,7 @@ export function LandingPage() {
   return (
     <div className="aurora-bg grain-texture min-h-screen">
       {/* ——— Hero: Editor-First Experience ——— */}
-      <section className="relative min-h-screen flex flex-col items-center justify-center px-4 pt-24 pb-16 overflow-hidden doodle-accents">
+      <section className="relative min-h-screen flex flex-col items-center justify-center px-3 sm:px-4 pt-20 sm:pt-24 pb-12 sm:pb-16 overflow-hidden doodle-accents">
         {/* Floating aurora orbs */}
         <div className="absolute top-20 left-[10%] w-72 h-72 bg-[#8B5CF6]/10 rounded-full blur-[100px] animate-float pointer-events-none" />
         <div className="absolute bottom-20 right-[10%] w-96 h-96 bg-[#6EE7B7]/8 rounded-full blur-[120px] animate-float pointer-events-none" style={{ animationDelay: '2s' }} />
@@ -102,9 +102,9 @@ export function LandingPage() {
             </div>
 
             {/* Editor body */}
-            <div className="p-8 md:p-12 min-h-[320px] relative" style={{ fontFamily: 'var(--font-body)' }}>
+            <div className="p-5 sm:p-8 md:p-12 min-h-[240px] sm:min-h-[320px] relative" style={{ fontFamily: 'var(--font-body)' }}>
               {/* Typed text */}
-              <div className="text-xl md:text-2xl text-[#1E1B4B] dark:text-[#E8E6F0] leading-relaxed">
+              <div className="text-base sm:text-xl md:text-2xl text-[#1E1B4B] dark:text-[#E8E6F0] leading-relaxed">
                 {typedText}
                 {/* Blinking cursor */}
                 <span className="inline-block w-[2px] h-7 bg-[#8B5CF6] ml-0.5 animate-cursor-blink align-text-bottom" />
@@ -137,7 +137,7 @@ export function LandingPage() {
               </motion.div>
 
               {/* Typing indicator for John */}
-              <div className="absolute bottom-6 left-8 md:left-12 flex items-center gap-2">
+              <div className="absolute bottom-4 sm:bottom-6 left-5 sm:left-8 md:left-12 flex items-center gap-2">
                 <div className="flex gap-0.5">
                   <div className="w-1.5 h-1.5 rounded-full bg-[#34D399] animate-typing-pulse" />
                   <div className="w-1.5 h-1.5 rounded-full bg-[#34D399] animate-typing-pulse" style={{ animationDelay: '0.2s' }} />
@@ -149,7 +149,7 @@ export function LandingPage() {
 
             {/* Notification bubble — slides in */}
             {showNotification && (
-              <div className="absolute top-16 right-5 animate-slide-in">
+              <div className="absolute top-14 right-3 sm:top-16 sm:right-5 animate-slide-in max-w-[calc(100%-1.5rem)]">
                 <div className="glass-panel rounded-[14px] px-4 py-2.5 flex items-center gap-2.5 shadow-lg">
                   <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#6EE7B7] to-[#34D399] flex items-center justify-center text-[9px] font-bold text-white">
                     B
@@ -163,7 +163,7 @@ export function LandingPage() {
             )}
 
             {/* CTA integrated inside editor bottom */}
-            <div className="border-t border-[rgba(139,92,246,0.08)] px-8 md:px-12 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="border-t border-[rgba(139,92,246,0.08)] px-5 sm:px-8 md:px-12 py-4 sm:py-6 flex flex-col xs:flex-row items-center justify-between gap-3 sm:gap-4">
               <p className="text-sm text-[#6B7280] dark:text-[#9CA3AF] font-medium">
                 ✨ Create your own workspace
               </p>
