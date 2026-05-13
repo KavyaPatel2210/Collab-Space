@@ -316,16 +316,34 @@ export function EditorPage() {
       {/* 1. FIXED TOP TOOLBAR & HEADER */}
       <div className="flex-shrink-0 flex flex-col z-40 bg-white dark:bg-[#0F0D1F] border-b border-gray-200 dark:border-white/10 shadow-sm">
         {/* Title & Actions Bar */}
-        <div className="h-14 px-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link to="/dashboard" className="p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors">
+        <div className="h-14 px-3 sm:px-4 flex items-center justify-between gap-2">
+          {/* LEFT: back + title */}
+          <div className="flex items-center gap-1 sm:gap-3 min-w-0 flex-1">
+            {/* On mobile: if chat is open, back button closes chat; otherwise goes to dashboard */}
+            {activeTab === "chat" ? (
+              <button
+                onClick={() => setActiveTab(null)}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors md:hidden flex-shrink-0"
+              >
+                <ChevronLeft className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+              </button>
+            ) : null}
+            <Link
+              to="/dashboard"
+              className={cn(
+                "p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors flex-shrink-0",
+                activeTab === "chat" ? "hidden md:flex" : "flex"
+              )}
+            >
               <ChevronLeft className="w-5 h-5 text-gray-500 dark:text-gray-400" />
             </Link>
-            <div className="flex flex-col">
+
+            {/* Title + status — constrained so it never pushes right buttons off */}
+            <div className="flex flex-col min-w-0">
               {isEditingTitle ? (
                 <input
                   autoFocus
-                  className="text-lg font-bold bg-transparent border-b-2 border-indigo-500 outline-none py-0.5"
+                  className="text-base sm:text-lg font-bold bg-transparent border-b-2 border-indigo-500 outline-none py-0.5 w-full"
                   value={editableTitle}
                   onChange={(e) => setEditableTitle(e.target.value)}
                   onBlur={handleTitleBlur}
@@ -333,13 +351,14 @@ export function EditorPage() {
                 />
               ) : (
                 <h2
-                  className="text-lg font-bold cursor-pointer hover:text-indigo-600 dark:text-gray-100 transition-colors"
+                  className="text-base sm:text-lg font-bold cursor-pointer hover:text-indigo-600 dark:text-gray-100 transition-colors truncate"
                   onClick={() => canEdit && setIsEditingTitle(true)}
                 >
                   {doc.title}
                 </h2>
               )}
-              <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider font-semibold">
+              {/* Status text — hidden on small screens to save space */}
+              <div className="hidden sm:flex items-center gap-2 text-[10px] uppercase tracking-wider font-semibold">
                 {saving ? (
                   <span className="text-indigo-500 flex items-center gap-1">
                     <Loader2 className="w-3 h-3 animate-spin" /> Saving...
@@ -351,12 +370,13 @@ export function EditorPage() {
               </div>
             </div>
           </div>
-          
-          <div className="flex items-center gap-2">
+
+          {/* RIGHT: actions — tightly packed on mobile */}
+          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
             <div className="relative group">
-              <Button variant="glass" size="sm">
-                <Download className="w-4 h-4 md:mr-2" />
-                <span className="hidden md:inline">Export</span>
+              <Button variant="glass" size="sm" className="px-2 sm:px-3">
+                <Download className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Export</span>
               </Button>
               <div className="absolute right-0 top-full mt-1 hidden group-hover:block bg-white dark:bg-[#1E1B4B] border border-gray-200 dark:border-white/10 rounded-lg shadow-xl py-1 min-w-[140px] z-50">
                 <button onClick={exportDOCX} className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-white/5 dark:text-gray-200 flex items-center gap-2">
@@ -365,13 +385,14 @@ export function EditorPage() {
               </div>
             </div>
 
-            <Button 
-              variant="glass" 
-              size="sm" 
+            <Button
+              variant="glass"
+              size="sm"
               onClick={() => setActiveTab(activeTab === "chat" ? null : "chat")}
-              className={cn(activeTab === "chat" && "bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400")}
+              className={cn("px-2 sm:px-3", activeTab === "chat" && "bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400")}
             >
-              <MessageCircle className="w-4 h-4 mr-2" /> Chat
+              <MessageCircle className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Chat</span>
               {unreadCount > 0 && (
                 <span className="ml-1 px-1.5 py-0.5 bg-red-500 text-white text-[10px] rounded-full leading-none">
                   {unreadCount}
@@ -380,13 +401,15 @@ export function EditorPage() {
             </Button>
 
             {userRole === "owner" && (
-              <Button size="sm" onClick={() => setIsShareModalOpen(true)} className="bg-indigo-600 hover:bg-indigo-700">
-                <Share2 className="w-4 h-4 md:mr-2" />
-                <span className="hidden md:inline">Share</span>
+              <Button size="sm" onClick={() => setIsShareModalOpen(true)} className="bg-indigo-600 hover:bg-indigo-700 px-2 sm:px-3">
+                <Share2 className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Share</span>
               </Button>
             )}
-            <div className="w-px h-6 bg-gray-200 mx-1" />
-            <Avatar fallback={user?.name?.[0]?.toUpperCase() || "U"} size="sm" />
+
+            {/* Divider + Avatar — hidden on mobile to keep bar clean */}
+            <div className="hidden sm:block w-px h-6 bg-gray-200 dark:bg-white/10 mx-1" />
+            <Avatar fallback={user?.name?.[0]?.toUpperCase() || "U"} size="sm" className="hidden sm:flex" />
           </div>
         </div>
 
@@ -470,23 +493,23 @@ export function EditorPage() {
               <div className="flex-1 overflow-auto p-4 space-y-4 bg-gray-50/50 dark:bg-[#0A0914]/50">
                 {messages.map((m, i) => (
                   <div key={i} className={cn(
-                    "flex flex-col max-w-[90%] p-3 rounded-2xl shadow-sm text-sm",
+                    "flex flex-col max-w-[85%] p-3 rounded-2xl shadow-sm text-sm break-words overflow-hidden",
                     m.senderId?._id === user?.id || m.senderId === user?.id 
                       ? "bg-indigo-600 text-white self-end rounded-tr-none" 
                       : "bg-white dark:bg-[#1E1B4B] border dark:border-white/5 text-gray-800 dark:text-gray-100 self-start rounded-tl-none"
                   )}>
-                    <div className={cn("text-[10px] font-bold uppercase mb-1", 
+                    <div className={cn("text-[10px] font-bold uppercase mb-1 truncate", 
                       m.senderId?._id === user?.id || m.senderId === user?.id ? "text-indigo-100" : "text-gray-400"
                     )}>
                       {m.senderId?.name || m.senderName}
                     </div>
-                    {m.message}
+                    <span className="break-words whitespace-pre-wrap">{m.message}</span>
                   </div>
                 ))}
                 <div ref={messagesEndRef} />
               </div>
 
-              <form onSubmit={sendChatMessage} className="p-3 border-t bg-white">
+              <form onSubmit={sendChatMessage} className="p-3 border-t border-gray-200 dark:border-white/10 bg-white dark:bg-[#0F0D1F]">
                 {typingUser && <div className="text-[10px] text-gray-400 italic mb-2 px-1">{typingUser} is typing...</div>}
                 <div className="flex gap-2">
                   <Input 

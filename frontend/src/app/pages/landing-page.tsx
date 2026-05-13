@@ -94,7 +94,7 @@ export function LandingPage() {
                     You
                   </div>
                   <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#6EE7B7] to-[#34D399] ring-2 ring-white/50 dark:ring-[#1E1B4B]/50 flex items-center justify-center text-[10px] font-bold text-white">
-                    B
+                    J
                   </div>
                 </div>
                 <span className="text-[11px] text-[#6B7280] dark:text-[#9CA3AF] font-medium ml-1">2 online</span>
@@ -152,7 +152,7 @@ export function LandingPage() {
               <div className="absolute top-14 right-3 sm:top-16 sm:right-5 animate-slide-in max-w-[calc(100%-1.5rem)]">
                 <div className="glass-panel rounded-[14px] px-4 py-2.5 flex items-center gap-2.5 shadow-lg">
                   <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#6EE7B7] to-[#34D399] flex items-center justify-center text-[9px] font-bold text-white">
-                    B
+                    J
                   </div>
                   <div>
                     <p className="text-[12px] font-semibold text-[#1E1B4B] dark:text-[#E8E6F0]">John joined the document</p>
