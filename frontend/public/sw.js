@@ -1,4 +1,4 @@
-const CACHE_NAME = 'collabspace-v1';
+const CACHE_NAME = 'collabspace-v2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -34,30 +34,25 @@ self.addEventListener('fetch', (event) => {
   if (event.request.url.includes('/api/')) return;
   
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-      
-      return fetch(event.request).then((networkResponse) => {
+    fetch(event.request)
+      .then((networkResponse) => {
         // Don't cache if not a valid response
         if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
           return networkResponse;
         }
         
-        // Clone the response
+        // Clone the response and update the cache with the fresh version
         const responseToCache = networkResponse.clone();
-        
         caches.open(CACHE_NAME).then((cache) => {
           cache.put(event.request, responseToCache);
         });
         
         return networkResponse;
-      }).catch(() => {
-        // If fetch fails (offline) and we don't have it in cache,
-        // we could return a fallback offline page here if we had one.
-      });
-    })
+      })
+      .catch(() => {
+        // If network fails (offline), fall back to the cache
+        return caches.match(event.request);
+      })
   );
 });
 
