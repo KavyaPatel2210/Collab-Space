@@ -88,7 +88,7 @@ export function Badge({ children, className, variant = "default" }: { children: 
 }
 
 /** Avatar Component — with glass ring */
-export function Avatar({ src, fallback, size = "md", online }: { src?: string; fallback: string; size?: "sm" | "md" | "lg"; online?: boolean }) {
+export function Avatar({ src, fallback, size = "md", online, className }: { src?: string; fallback: string; size?: "sm" | "md" | "lg"; online?: boolean; className?: string }) {
   const sizes = {
     sm: "w-8 h-8",
     md: "w-10 h-10",
@@ -102,7 +102,7 @@ export function Avatar({ src, fallback, size = "md", online }: { src?: string; f
   };
 
   return (
-    <div className={cn("relative rounded-full bg-gradient-to-br from-[#C4B5FD] to-[#818CF8] flex items-center justify-center overflow-visible ring-2 ring-white/30 dark:ring-white/10", sizes[size])}>
+    <div className={cn("relative rounded-full bg-gradient-to-br from-[#C4B5FD] to-[#818CF8] flex items-center justify-center overflow-visible ring-2 ring-white/30 dark:ring-white/10", sizes[size], className)}>
       {src ? (
         <img src={src} className="w-full h-full rounded-full object-cover" alt={fallback} />
       ) : (

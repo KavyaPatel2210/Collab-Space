@@ -5,11 +5,14 @@
 ![CollabSpace Interface](https://img.shields.io/badge/Status-Production--Ready-brightgreen)
 ![MERN Stack](https://img.shields.io/badge/Stack-MERN-blue)
 ![Realtime](https://img.shields.io/badge/Sync-Socket.io-orange)
+![PWA](https://img.shields.io/badge/PWA-Ready-purple)
 
 ## ✨ Key Features
 
 - **Real-time Collaboration**: Multiple users can edit the same document simultaneously with zero lag.
 - **Instant Team Chat**: Embedded chat window for seamless team communication without leaving the workspace.
+- **Push Notifications (PWA)**: Cross-platform Web Push notifications keep you updated on document shares and mentions, even when offline.
+- **AI Assistant Integration**: Powered by Google Gemini AI for intelligent content generation.
 - **Smart Security**: Role-based access control (Owner, Editor, Viewer) to keep your documents safe.
 - **Modern UI/UX**: Premium glassmorphic design with a dedicated Dark Mode and smooth animations.
 - **Cloud Sync**: All changes are automatically saved to a MongoDB cluster.
@@ -18,8 +21,8 @@
 
 ## 🛠️ Tech Stack
 
-- **Frontend**: React (Vite), TypeScript, Tailwind CSS, Framer Motion (motion/react), Lucide Icons.
-- **Backend**: Node.js, Express.js.
+- **Frontend**: React (Vite), TypeScript, Tailwind CSS, Framer Motion (motion/react), Lucide Icons, PWA Service Workers.
+- **Backend**: Node.js, Express.js, Google Gemini API.
 - **Database**: MongoDB (Mongoose).
 - **Real-time**: Socket.io.
 - **Authentication**: JWT (JSON Web Tokens) with Bcrypt password hashing.
