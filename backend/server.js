@@ -34,7 +34,16 @@ const db = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/collabspace';
 // Connect to MongoDB
 mongoose
   .connect(db)
-  .then(() => console.log('MongoDB Connected'))
+  .then(async () => {
+    console.log('MongoDB Connected');
+    // Drop corrupted unique index if it exists (for deployment)
+    try {
+      await mongoose.connection.collection('notifications').dropIndex('_id_str_1');
+      console.log('Dropped legacy index _id_str_1 from notifications collection');
+    } catch (err) {
+      // Ignore error if index doesn't exist
+    }
+  })
   .catch(err => console.log(err));
 
 // Sockets
