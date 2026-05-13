@@ -1,7 +1,8 @@
 const Document = require('../models/Document');
 const Message = require('../models/Message');
 const Notification = require('../models/Notification');
-
+const User = require('../models/User');
+const { sendPushNotification } = require('../utils/webpush');
 module.exports = function (io) {
   io.on('connection', (socket) => {
     console.log('New client connected', socket.id);
@@ -108,6 +109,16 @@ module.exports = function (io) {
             });
             await notif.save();
             io.to(`user_${recipientId}`).emit('new-notification', notif);
+            
+            // Send Native Web Push for offline devices
+            const recipientUser = await User.findById(recipientId);
+            if (recipientUser) {
+              await sendPushNotification(recipientUser, {
+                title: notif.title,
+                message: notif.message,
+                url: `/editor/${documentId}?tab=chat`
+              });
+            }
           }
         }
       } catch (err) {

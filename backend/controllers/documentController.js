@@ -1,6 +1,7 @@
 const Document = require('../models/Document');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
+const { sendPushNotification } = require('../utils/webpush');
 
 exports.createDocument = async (req, res) => {
   try {
@@ -154,6 +155,13 @@ exports.addCollaborator = async (req, res) => {
         fromUser: { _id: sender._id, name: sender.name }
       });
     }
+
+    // Send Native Web Push for offline devices
+    await sendPushNotification(collabUser, {
+      title: notif.title,
+      message: notif.message,
+      url: `/editor/${doc._id}`
+    });
     
     // Return populated doc
     const updatedDoc = await Document.findById(req.params.id)

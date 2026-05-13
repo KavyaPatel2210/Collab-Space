@@ -41,3 +41,31 @@ exports.markAllAsRead = async (req, res) => {
     res.status(500).send('Server Error');
   }
 };
+
+const User = require('../models/User');
+
+exports.subscribe = async (req, res) => {
+  try {
+    const subscription = req.body;
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ msg: 'User not found' });
+    
+    // Check if subscription already exists
+    const exists = user.pushSubscriptions?.some(sub => sub.endpoint === subscription.endpoint);
+    if (!exists) {
+      if (!user.pushSubscriptions) user.pushSubscriptions = [];
+      user.pushSubscriptions.push(subscription);
+      await user.save();
+    }
+    
+    res.status(201).json({ msg: 'Subscribed successfully' });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+};
+
+exports.getVapidKey = (req, res) => {
+  const publicVapidKey = process.env.PUBLIC_VAPID_KEY || 'BCatzCjIlpC2K98QvdBL8K6lBl8If7SEFaaUkqh4jp-v5EzOvYbTHjzgaZf9Q37uqFpgMLs-i_h7E6sNuEpE4u0';
+  res.json({ publicKey: publicVapidKey });
+};

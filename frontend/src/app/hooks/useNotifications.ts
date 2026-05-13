@@ -4,6 +4,18 @@ import { useAuth } from "../contexts/AuthContext";
 import { getSocket } from "../lib/socket";
 import { toast } from "sonner";
 
+// Helper to convert base64 to Uint8Array for PushManager
+const urlBase64ToUint8Array = (base64String: string) => {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+};
+
 export interface Notification {
   _id: string;
   type: 'message' | 'share' | 'edit';
@@ -50,10 +62,37 @@ export function useNotifications() {
       if (socket.connected) identify();
       socket.on('connect', identify);
 
+      // Setup Web Push
+      const setupWebPush = async () => {
+        try {
+          if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+          const registration = await navigator.serviceWorker.ready;
+          let subscription = await registration.pushManager.getSubscription();
+          
+          if (!subscription) {
+            const { data } = await API.get('/api/notifications/vapid-key');
+            const convertedVapidKey = urlBase64ToUint8Array(data.publicKey);
+            subscription = await registration.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: convertedVapidKey
+            });
+          }
+          await API.post('/api/notifications/subscribe', subscription);
+        } catch (err) {
+          console.error('Failed to setup web push:', err);
+        }
+      };
+
       // Request notification permission ONLY if installed as PWA
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
-      if (isStandalone && "Notification" in window && Notification.permission === "default") {
-        Notification.requestPermission();
+      if (isStandalone && "Notification" in window) {
+        if (Notification.permission === "default") {
+          Notification.requestPermission().then(perm => {
+            if (perm === 'granted') setupWebPush();
+          });
+        } else if (Notification.permission === "granted") {
+          setupWebPush();
+        }
       }
 
       const handleNewNotification = (notif: Notification) => {
