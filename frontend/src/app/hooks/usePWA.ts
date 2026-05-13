@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 
 // Extend Window interface for the BeforeInstallPromptEvent
 interface BeforeInstallPromptEvent extends Event {
@@ -57,6 +58,7 @@ export function usePWA() {
 
   const installPWA = async () => {
     if (!deferredPrompt) {
+      toast.info("To install, click the install icon in your browser's address bar or select 'Add to Home Screen' from the menu.");
       return;
     }
     // Show the install prompt

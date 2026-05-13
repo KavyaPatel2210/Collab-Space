@@ -50,8 +50,9 @@ export function useNotifications() {
       if (socket.connected) identify();
       socket.on('connect', identify);
 
-      // Request notification permission if supported
-      if ("Notification" in window && Notification.permission === "default") {
+      // Request notification permission ONLY if installed as PWA
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
+      if (isStandalone && "Notification" in window && Notification.permission === "default") {
         Notification.requestPermission();
       }
 

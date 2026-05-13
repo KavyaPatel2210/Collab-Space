@@ -84,7 +84,7 @@ export function Navbar({ isDarkMode, onToggleDarkMode }: NavbarProps) {
 
                 {/* Right actions */}
                 <div className="flex items-center gap-2">
-                    {isInstallable && !isStandalone && (
+                    {!isStandalone && (
                         <Button 
                             size="sm" 
                             onClick={installPWA}
