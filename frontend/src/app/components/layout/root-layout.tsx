@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Outlet, useLocation, Link, useNavigate } from "react-router";
-import { LogOut, LayoutDashboard, Settings, FileText, Share2, Bell, Menu, Sun, Moon, Check, ExternalLink, X, MessageCircle } from "lucide-react";
+import { LogOut, LayoutDashboard, Settings, FileText, Share2, Bell, Menu, Sun, Moon, Check, ExternalLink, X, MessageCircle, Download } from "lucide-react";
 import { cn, Avatar, Badge } from "../ui-components";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "../../contexts/AuthContext";
@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Logo } from "../Logo";
 import { Navbar } from "../Navbar";
 import { useNotifications } from "../../hooks/useNotifications";
+import { usePWA } from "../../hooks/usePWA";
 
 export function RootLayout() {
   const location = useLocation();
@@ -32,6 +33,9 @@ export function RootLayout() {
 
   // Notifications
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
+
+  // PWA hook
+  const { isStandalone, installPWA } = usePWA();
 
   const isLanding = location.pathname === "/";
   const isLogin = location.pathname === "/login";
@@ -135,6 +139,16 @@ export function RootLayout() {
 
           {/* Right actions */}
           <div className="flex items-center gap-2">
+            {!isStandalone && (
+              <button 
+                onClick={installPWA}
+                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-[10px] transition-colors"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Install App
+              </button>
+            )}
+
             <button onClick={toggleDarkMode} className="p-2 hover:bg-[rgba(139,92,246,0.08)] rounded-[10px] transition-colors">
               {isDarkMode ? <Sun className="w-4 h-4 text-[#FBBF24]" /> : <Moon className="w-4 h-4 text-[#6B7280]" />}
             </button>

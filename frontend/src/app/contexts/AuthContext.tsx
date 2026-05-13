@@ -22,6 +22,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     const loadUser = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setLoading(false);
+        return;
+      }
       try {
         const res = await API.get('/api/auth/me');
         setUser({ id: res.data._id, name: res.data.name, email: res.data.email });
