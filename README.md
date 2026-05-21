@@ -21,7 +21,7 @@
 ## 🛠️ Tech Stack
 
 - **Frontend**: React (Vite), TypeScript, Tailwind CSS, Framer Motion (motion/react), Lucide Icons, PWA Service Workers.
-- **Backend**: Node.js, Express.js, Google Gemini API.
+- **Backend**: Node.js, Express.js.
 - **Database**: MongoDB (Mongoose).
 - **Real-time**: Socket.io.
 - **Authentication**: JWT (JSON Web Tokens) with Bcrypt password hashing.
