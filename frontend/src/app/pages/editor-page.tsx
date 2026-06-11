@@ -576,10 +576,12 @@ export function EditorPage() {
           <style>
             {`
               .paginated-editor {
-                background-image: repeating-linear-gradient(to bottom, transparent, transparent 1036px, #e5e7eb 1036px, #e5e7eb 1056px);
+                background-image: repeating-linear-gradient(to bottom, white, white 1036px, transparent 1036px, transparent 1056px);
+                filter: drop-shadow(0px 8px 24px rgba(0,0,0,0.12));
               }
               .dark .paginated-editor {
-                background-image: repeating-linear-gradient(to bottom, transparent, transparent 1036px, #2e2b5e 1036px, #2e2b5e 1056px);
+                background-image: repeating-linear-gradient(to bottom, #1E1B4B, #1E1B4B 1036px, transparent 1036px, transparent 1056px);
+                filter: drop-shadow(0px 8px 24px rgba(0,0,0,0.4));
               }
             `}
           </style>
@@ -589,7 +591,7 @@ export function EditorPage() {
           {/* Spotlight Overlay */}
           <SpotlightOverlay spotlights={remoteSpotlights} />
 
-          <div className="paginated-editor max-w-[816px] w-full bg-white dark:bg-[#1E1B4B] min-h-[1056px] rounded-sm shadow-2xl p-8 sm:p-12 md:p-[96px] mb-10 transition-all duration-300 ring-1 ring-gray-200 dark:ring-white/10 relative">
+          <div className="paginated-editor max-w-[816px] w-full min-h-[1056px] p-8 sm:p-12 md:p-[96px] mb-10 transition-all duration-300 relative">
             <div
               ref={editorRef}
               contentEditable={canEdit}
