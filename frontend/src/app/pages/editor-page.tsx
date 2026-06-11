@@ -573,25 +573,12 @@ export function EditorPage() {
           className="flex-1 overflow-auto p-4 md:p-10 flex flex-col items-center relative"
           onMouseMove={handleEditorMouseMove}
         >
-          <style>
-            {`
-              .paginated-editor {
-                background-image: repeating-linear-gradient(to bottom, white, white 1036px, transparent 1036px, transparent 1056px);
-                filter: drop-shadow(0px 8px 24px rgba(0,0,0,0.12));
-              }
-              .dark .paginated-editor {
-                background-image: repeating-linear-gradient(to bottom, #1E1B4B, #1E1B4B 1036px, transparent 1036px, transparent 1056px);
-                filter: drop-shadow(0px 8px 24px rgba(0,0,0,0.4));
-              }
-            `}
-          </style>
-
           {/* Cursor Overlay — absolutely positioned over editor container */}
           <CursorOverlay cursors={remoteCursors} editorRef={editorContainerRef} />
           {/* Spotlight Overlay */}
           <SpotlightOverlay spotlights={remoteSpotlights} />
 
-          <div className="paginated-editor max-w-[816px] w-full min-h-[1056px] p-8 sm:p-12 md:p-[96px] mb-10 transition-all duration-300 relative">
+          <div className="max-w-[816px] w-full bg-white dark:bg-[#1E1B4B] min-h-[1056px] rounded-sm shadow-2xl p-8 sm:p-12 md:p-[96px] mb-10 transition-all duration-300 ring-1 ring-gray-200 dark:ring-white/10 relative print:shadow-none print:ring-0 print:m-0 print:p-0">
             <div
               ref={editorRef}
               contentEditable={canEdit}
