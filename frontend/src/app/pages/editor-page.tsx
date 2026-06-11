@@ -24,6 +24,7 @@ import { CursorOverlay } from "../components/editor/CursorOverlay";
 import { SpotlightOverlay } from "../components/editor/SpotlightOverlay";
 import { HuddlePanel } from "../components/editor/HuddlePanel";
 import { AIAssistantPanel } from "../components/editor/AIAssistantPanel";
+import { marked } from "marked";
 
 export function EditorPage() {
   const { id } = useParams();
@@ -327,10 +328,15 @@ export function EditorPage() {
   };
 
   // Insert AI text into editor at current cursor or end
-  const handleInsertAIText = (text: string) => {
+  const handleInsertAIText = async (text: string) => {
     if (!editorRef.current || !canEdit) return;
     editorRef.current.focus();
-    document.execCommand("insertHTML", false, text.replace(/\n/g, "<br>"));
+    try {
+      const htmlContent = await marked.parse(text);
+      document.execCommand("insertHTML", false, htmlContent);
+    } catch (err) {
+      document.execCommand("insertHTML", false, text.replace(/\n/g, "<br>"));
+    }
     handleEditorInput();
     toast.success("Text inserted into document");
   };
@@ -567,17 +573,28 @@ export function EditorPage() {
           className="flex-1 overflow-auto p-4 md:p-10 flex flex-col items-center relative"
           onMouseMove={handleEditorMouseMove}
         >
+          <style>
+            {`
+              .paginated-editor {
+                background-image: repeating-linear-gradient(to bottom, transparent, transparent 1036px, #e5e7eb 1036px, #e5e7eb 1056px);
+              }
+              .dark .paginated-editor {
+                background-image: repeating-linear-gradient(to bottom, transparent, transparent 1036px, #2e2b5e 1036px, #2e2b5e 1056px);
+              }
+            `}
+          </style>
+
           {/* Cursor Overlay — absolutely positioned over editor container */}
           <CursorOverlay cursors={remoteCursors} editorRef={editorContainerRef} />
           {/* Spotlight Overlay */}
           <SpotlightOverlay spotlights={remoteSpotlights} />
 
-          <div className="max-w-4xl w-full bg-white dark:bg-[#1E1B4B] min-h-[600px] md:min-h-[1056px] rounded-sm shadow-2xl p-6 sm:p-12 md:p-[96px] mb-10 transition-all duration-300 ring-1 ring-gray-200 dark:ring-white/10 relative">
+          <div className="paginated-editor max-w-[816px] w-full bg-white dark:bg-[#1E1B4B] min-h-[1056px] rounded-sm shadow-2xl p-8 sm:p-12 md:p-[96px] mb-10 transition-all duration-300 ring-1 ring-gray-200 dark:ring-white/10 relative">
             <div
               ref={editorRef}
               contentEditable={canEdit}
               onInput={handleEditorInput}
-              className="w-full min-h-full outline-none text-gray-800 dark:text-gray-100 text-[16px] leading-[1.6] prose max-w-none focus:ring-0 dark:prose-invert"
+              className="w-full min-h-[864px] outline-none text-gray-800 dark:text-gray-100 text-[16px] leading-[1.6] prose max-w-none focus:ring-0 dark:prose-invert"
               style={{ fontFamily: 'Inter, sans-serif', cursor: isSpotlightActive ? 'crosshair' : 'text' }}
             />
           </div>
