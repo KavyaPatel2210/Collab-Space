@@ -626,11 +626,15 @@ export function EditorPage() {
           <style>
             {`
               .paginated-editor {
-                background-image: repeating-linear-gradient(to bottom, white, white 1056px, transparent 1056px, transparent 1096px);
+                background-color: #ffffff;
+                -webkit-mask-image: repeating-linear-gradient(to bottom, black 0px, black 1056px, transparent 1056px, transparent 1096px);
+                mask-image: repeating-linear-gradient(to bottom, black 0px, black 1056px, transparent 1056px, transparent 1096px);
                 filter: drop-shadow(0px 8px 24px rgba(0,0,0,0.12));
               }
               .dark .paginated-editor {
-                background-image: repeating-linear-gradient(to bottom, #1E1B4B, #1E1B4B 1056px, transparent 1056px, transparent 1096px);
+                background-color: #1e1b4b;
+                -webkit-mask-image: repeating-linear-gradient(to bottom, black 0px, black 1056px, transparent 1056px, transparent 1096px);
+                mask-image: repeating-linear-gradient(to bottom, black 0px, black 1056px, transparent 1056px, transparent 1096px);
                 filter: drop-shadow(0px 8px 24px rgba(0,0,0,0.4));
               }
             `}
