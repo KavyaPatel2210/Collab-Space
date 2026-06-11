@@ -188,6 +188,7 @@ export function EditorPage() {
     if (doc && editorRef.current && !isInternalUpdate.current) {
       if (editorRef.current.innerHTML !== doc.content) {
         editorRef.current.innerHTML = doc.content || "";
+        setTimeout(applyPagination, 100); // Apply pagination after load
       }
     }
     isInternalUpdate.current = false;
@@ -242,9 +243,58 @@ export function EditorPage() {
     }
   };
 
+  const applyPagination = () => {
+    if (!editorRef.current) return;
+    const editor = editorRef.current;
+    
+    // Wrap raw text nodes in divs so they can be measured
+    Array.from(editor.childNodes).forEach(node => {
+      if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim() !== "") {
+        const div = document.createElement("div");
+        node.parentNode?.insertBefore(div, node);
+        div.appendChild(node);
+      }
+    });
+
+    const PAGE_HEIGHT = 1056;
+    const GAP_HEIGHT = 40;
+    const CYCLE = PAGE_HEIGHT + GAP_HEIGHT;
+    const PAGE_PADDING = 96; // 96px padding top and bottom
+
+    // Reset previous pagination margins
+    Array.from(editor.children).forEach((child: any) => {
+      if (child.dataset.pagePushed) {
+        child.style.marginTop = child.dataset.originalMarginTop || '';
+        delete child.dataset.pagePushed;
+      }
+    });
+
+    const children = Array.from(editor.children) as HTMLElement[];
+    for (let i = 0; i < children.length; i++) {
+      const child = children[i];
+      const childStart = child.offsetTop;
+      const childEnd = childStart + child.offsetHeight;
+      
+      const cycleIndex = Math.floor(childStart / CYCLE);
+      const readableBottom = cycleIndex * CYCLE + PAGE_HEIGHT - PAGE_PADDING;
+      const nextReadableTop = (cycleIndex + 1) * CYCLE + PAGE_PADDING;
+
+      // If child overflows the readable bottom area, push it to the next page
+      if (childEnd > readableBottom && child.offsetHeight < (PAGE_HEIGHT - PAGE_PADDING * 2)) {
+        const originalMarginTop = parseInt(window.getComputedStyle(child).marginTop || '0');
+        child.dataset.originalMarginTop = child.style.marginTop;
+        child.dataset.pagePushed = "true";
+        
+        const neededPush = nextReadableTop - childStart;
+        child.style.marginTop = `${originalMarginTop + neededPush}px`;
+      }
+    }
+  };
+
   const handleEditorInput = () => {
     if (editorRef.current) {
       isInternalUpdate.current = true;
+      applyPagination(); // Apply our dynamic page breaks!
       const content = editorRef.current.innerHTML;
       socketRef.current?.emit("send-changes", id, content);
       
@@ -573,17 +623,30 @@ export function EditorPage() {
           className="flex-1 overflow-auto p-4 md:p-10 flex flex-col items-center relative"
           onMouseMove={handleEditorMouseMove}
         >
+          <style>
+            {`
+              .paginated-editor {
+                background-image: repeating-linear-gradient(to bottom, white, white 1056px, transparent 1056px, transparent 1096px);
+                filter: drop-shadow(0px 8px 24px rgba(0,0,0,0.12));
+              }
+              .dark .paginated-editor {
+                background-image: repeating-linear-gradient(to bottom, #1E1B4B, #1E1B4B 1056px, transparent 1056px, transparent 1096px);
+                filter: drop-shadow(0px 8px 24px rgba(0,0,0,0.4));
+              }
+            `}
+          </style>
+
           {/* Cursor Overlay — absolutely positioned over editor container */}
           <CursorOverlay cursors={remoteCursors} editorRef={editorContainerRef} />
           {/* Spotlight Overlay */}
           <SpotlightOverlay spotlights={remoteSpotlights} />
 
-          <div className="max-w-[816px] w-full bg-white dark:bg-[#1E1B4B] min-h-[1056px] rounded-sm shadow-2xl p-8 sm:p-12 md:p-[96px] mb-10 transition-all duration-300 ring-1 ring-gray-200 dark:ring-white/10 relative print:shadow-none print:ring-0 print:m-0 print:p-0">
+          <div className="paginated-editor max-w-[816px] w-full min-h-[1056px] p-0 mb-10 transition-all duration-300 relative print:shadow-none print:bg-none print:m-0 print:p-0">
             <div
               ref={editorRef}
               contentEditable={canEdit}
               onInput={handleEditorInput}
-              className="w-full min-h-[864px] outline-none text-gray-800 dark:text-gray-100 text-[16px] leading-[1.6] prose max-w-none focus:ring-0 dark:prose-invert"
+              className="w-full min-h-[1056px] outline-none text-gray-800 dark:text-gray-100 text-[16px] leading-[1.6] prose max-w-none focus:ring-0 dark:prose-invert py-[96px] px-[96px]"
               style={{ fontFamily: 'Inter, sans-serif', cursor: isSpotlightActive ? 'crosshair' : 'text' }}
             />
           </div>
