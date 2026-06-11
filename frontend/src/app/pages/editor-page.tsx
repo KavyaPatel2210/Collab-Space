@@ -58,6 +58,7 @@ export function EditorPage() {
   const editorContainerRef = React.useRef<HTMLDivElement>(null);
   const [activeFormats, setActiveFormats] = React.useState<Set<string>>(new Set());
   const isInternalUpdate = React.useRef(false);
+  const [pageCount, setPageCount] = React.useState(1);
 
   // Sockets
   const socketRef = React.useRef<Socket | null>(null);
@@ -246,15 +247,6 @@ export function EditorPage() {
   const applyPagination = () => {
     if (!editorRef.current) return;
     const editor = editorRef.current;
-    
-    // Wrap raw text nodes in divs so they can be measured
-    Array.from(editor.childNodes).forEach(node => {
-      if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim() !== "") {
-        const div = document.createElement("div");
-        node.parentNode?.insertBefore(div, node);
-        div.appendChild(node);
-      }
-    });
 
     const PAGE_HEIGHT = 1056;
     const GAP_HEIGHT = 40;
@@ -289,6 +281,10 @@ export function EditorPage() {
         child.style.marginTop = `${originalMarginTop + neededPush}px`;
       }
     }
+
+    const newHeight = editor.scrollHeight;
+    const calculatedPages = Math.max(1, Math.ceil(newHeight / CYCLE));
+    setPageCount(calculatedPages);
   };
 
   const handleEditorInput = () => {
@@ -623,34 +619,25 @@ export function EditorPage() {
           className="flex-1 overflow-auto p-4 md:p-10 flex flex-col items-center relative"
           onMouseMove={handleEditorMouseMove}
         >
-          <style>
-            {`
-              .paginated-editor {
-                background-color: #ffffff;
-                -webkit-mask-image: repeating-linear-gradient(to bottom, black 0px, black 1056px, transparent 1056px, transparent 1096px);
-                mask-image: repeating-linear-gradient(to bottom, black 0px, black 1056px, transparent 1056px, transparent 1096px);
-                filter: drop-shadow(0px 8px 24px rgba(0,0,0,0.12));
-              }
-              .dark .paginated-editor {
-                background-color: #1e1b4b;
-                -webkit-mask-image: repeating-linear-gradient(to bottom, black 0px, black 1056px, transparent 1056px, transparent 1096px);
-                mask-image: repeating-linear-gradient(to bottom, black 0px, black 1056px, transparent 1056px, transparent 1096px);
-                filter: drop-shadow(0px 8px 24px rgba(0,0,0,0.4));
-              }
-            `}
-          </style>
-
           {/* Cursor Overlay — absolutely positioned over editor container */}
           <CursorOverlay cursors={remoteCursors} editorRef={editorContainerRef} />
           {/* Spotlight Overlay */}
           <SpotlightOverlay spotlights={remoteSpotlights} />
 
-          <div className="paginated-editor max-w-[816px] w-full min-h-[1056px] p-0 mb-10 transition-all duration-300 relative print:shadow-none print:bg-none print:m-0 print:p-0">
+          <div className="relative max-w-[816px] w-full min-h-[1056px] mb-10">
+            {/* Background Pages Layer */}
+            <div className="absolute inset-x-0 top-0 pointer-events-none flex flex-col gap-[40px] z-0">
+              {Array.from({ length: pageCount }).map((_, i) => (
+                <div key={i} className="w-full h-[1056px] bg-white dark:bg-[#1E1B4B] shadow-2xl ring-1 ring-gray-200 dark:ring-white/10 flex-shrink-0 rounded-sm print:shadow-none print:ring-0" />
+              ))}
+            </div>
+
+            {/* Text Editor Layer */}
             <div
               ref={editorRef}
               contentEditable={canEdit}
               onInput={handleEditorInput}
-              className="w-full min-h-[1056px] outline-none text-gray-800 dark:text-gray-100 text-[16px] leading-[1.6] prose max-w-none focus:ring-0 dark:prose-invert py-[96px] px-[96px]"
+              className="w-full min-h-[1056px] outline-none text-gray-800 dark:text-gray-100 text-[16px] leading-[1.6] prose max-w-none focus:ring-0 dark:prose-invert py-[96px] px-[96px] bg-transparent relative z-10"
               style={{ fontFamily: 'Inter, sans-serif', cursor: isSpotlightActive ? 'crosshair' : 'text' }}
             />
           </div>
