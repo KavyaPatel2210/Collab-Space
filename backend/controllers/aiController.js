@@ -30,19 +30,16 @@ exports.generate = async (req, res) => {
   }
 
   try {
-    // Try using gemini-1.5-flash first
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     let text;
 
     if (history && Array.isArray(history) && history.length > 0) {
-      // Use chat mode with provided history
       const chat = model.startChat({ history });
       const result = await chat.sendMessage(fullPrompt);
       const response = await result.response;
       text = response.text();
     } else {
-      // Standard single-turn generation
       const result = await model.generateContent(fullPrompt);
       const response = await result.response;
       text = response.text();
@@ -50,28 +47,7 @@ exports.generate = async (req, res) => {
 
     res.json({ result: text });
   } catch (err) {
-    console.error('Gemini primary model failed, trying fallback:', err.message);
-    try {
-      // Fallback to gemini-pro if flash is unavailable
-      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-
-      let text;
-
-      if (history && Array.isArray(history) && history.length > 0) {
-        const chat = model.startChat({ history });
-        const result = await chat.sendMessage(fullPrompt);
-        const response = await result.response;
-        text = response.text();
-      } else {
-        const result = await model.generateContent(fullPrompt);
-        const response = await result.response;
-        text = response.text();
-      }
-
-      res.json({ result: text });
-    } catch (fallbackErr) {
-      console.error('Gemini fallback failed:', fallbackErr.message);
-      res.status(500).json({ msg: 'Failed to generate content', error: fallbackErr.message });
-    }
+    console.error('Gemini API failed:', err.message);
+    res.status(500).json({ msg: 'Failed to generate content', error: err.message });
   }
 };
