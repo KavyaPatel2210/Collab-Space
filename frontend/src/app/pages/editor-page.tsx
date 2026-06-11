@@ -56,6 +56,7 @@ export function EditorPage() {
   // Editor state
   const editorRef = React.useRef<HTMLDivElement>(null);
   const editorContainerRef = React.useRef<HTMLDivElement>(null);
+  const savedSelectionRef = React.useRef<Range | null>(null);
   const [activeFormats, setActiveFormats] = React.useState<Set<string>>(new Set());
   const isInternalUpdate = React.useRef(false);
   const [pageCount, setPageCount] = React.useState(1);
@@ -376,13 +377,32 @@ export function EditorPage() {
   // Insert AI text into editor at current cursor or end
   const handleInsertAIText = async (text: string) => {
     if (!editorRef.current || !canEdit) return;
-    editorRef.current.focus();
+    
     try {
       const htmlContent = await marked.parse(text);
+      
+      // Focus the editor safely without selecting all text
+      editorRef.current.focus();
+      const sel = window.getSelection();
+      
+      if (savedSelectionRef.current) {
+        // Restore the exact cursor position they had before clicking the AI panel
+        sel?.removeAllRanges();
+        sel?.addRange(savedSelectionRef.current);
+      } else {
+        // If no saved position, move cursor to the very end of the document
+        const range = document.createRange();
+        range.selectNodeContents(editorRef.current);
+        range.collapse(false);
+        sel?.removeAllRanges();
+        sel?.addRange(range);
+      }
+
       document.execCommand("insertHTML", false, htmlContent);
     } catch (err) {
       document.execCommand("insertHTML", false, text.replace(/\n/g, "<br>"));
     }
+    
     handleEditorInput();
     toast.success("Text inserted into document");
   };
@@ -637,6 +657,12 @@ export function EditorPage() {
               ref={editorRef}
               contentEditable={canEdit}
               onInput={handleEditorInput}
+              onBlur={() => {
+                const sel = window.getSelection();
+                if (sel && sel.rangeCount > 0) {
+                  savedSelectionRef.current = sel.getRangeAt(0);
+                }
+              }}
               className="w-full min-h-[1056px] outline-none text-gray-800 dark:text-gray-100 text-[16px] leading-[1.6] prose max-w-none focus:ring-0 dark:prose-invert py-[96px] px-[96px] bg-transparent relative z-10"
               style={{ fontFamily: 'Inter, sans-serif', cursor: isSpotlightActive ? 'crosshair' : 'text' }}
             />
