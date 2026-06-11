@@ -116,6 +116,7 @@ export function EditorPage() {
         else {
           const collab = res.data.collaborators.find((c: any) => c.userId._id === user.id);
           if (collab) role = collab.role;
+          else if (res.data.isTeamMember) role = "editor"; // Default to editor for team members
         }
         setUserRole(role);
       } catch (err: any) {

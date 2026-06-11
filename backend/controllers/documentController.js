@@ -1,6 +1,7 @@
 const Document = require('../models/Document');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
+const Team = require('../models/Team');
 const { sendPushNotification } = require('../utils/webpush');
 
 exports.createDocument = async (req, res) => {
@@ -20,10 +21,16 @@ exports.createDocument = async (req, res) => {
 
 exports.getDocuments = async (req, res) => {
   try {
+    const userTeams = await Team.find({
+      $or: [{ owner: req.user.id }, { 'members.userId': req.user.id }]
+    }).select('_id');
+    const teamIds = userTeams.map(t => t._id);
+
     const docs = await Document.find({
       $or: [
         { owner: req.user.id },
-        { 'collaborators.userId': req.user.id }
+        { 'collaborators.userId': req.user.id },
+        { teamId: { $in: teamIds } }
       ]
     })
       .populate('owner', 'name email')
@@ -46,14 +53,24 @@ exports.getDocumentById = async (req, res) => {
       return res.status(404).json({ msg: 'Document not found' });
     }
 
+    let isTeamMember = false;
+    if (doc.teamId) {
+      const team = await Team.findById(doc.teamId);
+      if (team && (team.owner.toString() === req.user.id || team.members.some(m => m.userId.toString() === req.user.id))) {
+        isTeamMember = true;
+      }
+    }
+
     const isOwner = doc.owner._id.toString() === req.user.id;
     const isCollab = doc.collaborators.some(c => c.userId._id.toString() === req.user.id);
 
-    if (!isOwner && !isCollab) {
+    if (!isOwner && !isCollab && !isTeamMember) {
       return res.status(401).json({ msg: 'Not authorized' });
     }
 
-    res.json(doc);
+    let docObj = doc.toObject();
+    docObj.isTeamMember = isTeamMember;
+    res.json(docObj);
   } catch (err) {
     console.error(err.message);
     if (err.kind === 'ObjectId') {
@@ -70,11 +87,19 @@ exports.updateDocument = async (req, res) => {
       return res.status(404).json({ msg: 'Document not found' });
     }
 
+    let isTeamMember = false;
+    if (doc.teamId) {
+      const team = await Team.findById(doc.teamId);
+      if (team && (team.owner.toString() === req.user.id || team.members.some(m => m.userId.toString() === req.user.id))) {
+        isTeamMember = true;
+      }
+    }
+
     const isOwner = doc.owner.toString() === req.user.id;
     const collab = doc.collaborators.find(c => c.userId.toString() === req.user.id);
     const isEditor = collab && collab.role === 'editor';
 
-    if (!isOwner && !isEditor) {
+    if (!isOwner && !isEditor && !isTeamMember) {
       return res.status(401).json({ msg: 'Not authorized to edit' });
     }
 
