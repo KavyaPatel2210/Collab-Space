@@ -3,6 +3,8 @@ import { LandingPage } from "./pages/landing-page";
 import { LoginPage } from "./pages/login-page";
 import { DashboardPage } from "./pages/dashboard-page";
 import { EditorPage } from "./pages/editor-page";
+import { TeamsPage } from "./pages/teams-page";
+import { TeamWorkspacePage } from "./pages/team-workspace-page";
 import { RootLayout } from "./components/layout/root-layout";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
@@ -32,6 +34,22 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
           <EditorPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "teams",
+        element: (
+          <ProtectedRoute>
+          <TeamsPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "teams/:id",
+        element: (
+          <ProtectedRoute>
+          <TeamWorkspacePage />
           </ProtectedRoute>
         ),
       },

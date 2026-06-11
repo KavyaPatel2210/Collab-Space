@@ -3,7 +3,9 @@ import { useParams, Link, useNavigate, useSearchParams } from "react-router";
 import {
   ChevronLeft, Share2, Plus, Check, Search,
   Bold, Italic, Underline, List, ListOrdered, AlignLeft, AlignCenter, AlignRight,
-  Image as ImageIcon, Link as LinkIcon, Save, Loader2, AlertCircle, Lock, MessageCircle, Send, X, Download, Type, Palette
+  Image as ImageIcon, Link as LinkIcon, Save, Loader2, AlertCircle, Lock,
+  MessageCircle, Send, X, Download, Type, Palette, Sparkles, Crosshair,
+  Mic, MicOff, PhoneOff, Radio
 } from "lucide-react";
 import { saveAs } from "file-saver";
 import { Button, Avatar, Badge, Input, Modal, cn } from "../components/ui-components";
@@ -14,6 +16,14 @@ import API from "../lib/api";
 import { Socket } from "socket.io-client";
 import { getSocket } from "../lib/socket";
 import { useNotifications } from "../hooks/useNotifications";
+import { useCursorPresence, getUserColor } from "../hooks/useCursorPresence";
+import { useSpotlight } from "../hooks/useSpotlight";
+import { useHuddle } from "../hooks/useHuddle";
+import { useAIAssistant } from "../hooks/useAIAssistant";
+import { CursorOverlay } from "../components/editor/CursorOverlay";
+import { SpotlightOverlay } from "../components/editor/SpotlightOverlay";
+import { HuddlePanel } from "../components/editor/HuddlePanel";
+import { AIAssistantPanel } from "../components/editor/AIAssistantPanel";
 
 export function EditorPage() {
   const { id } = useParams();
@@ -28,7 +38,7 @@ export function EditorPage() {
   const [saving, setSaving] = React.useState(false);
   const [userRole, setUserRole] = React.useState<string | null>(null);
   
-  const [activeTab, setActiveTab] = React.useState<"chat" | null>(
+  const [activeTab, setActiveTab] = React.useState<"chat" | "ai" | null>(
     searchParams.get("tab") === "chat" ? "chat" : null
   );
 
@@ -44,6 +54,7 @@ export function EditorPage() {
 
   // Editor state
   const editorRef = React.useRef<HTMLDivElement>(null);
+  const editorContainerRef = React.useRef<HTMLDivElement>(null);
   const [activeFormats, setActiveFormats] = React.useState<Set<string>>(new Set());
   const isInternalUpdate = React.useRef(false);
 
@@ -57,9 +68,36 @@ export function EditorPage() {
   const typingTimeoutRef = React.useRef<any>(null);
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
 
-
   // Presence
   const [onlineUsers, setOnlineUsers] = React.useState<any[]>([]);
+
+  // ─── NEW FEATURE HOOKS ───────────────────────────────────────────
+  const userColor = user ? getUserColor(user.id) : "#6366F1";
+
+  const { remoteCursors, updateSpeakingStatus } = useCursorPresence(
+    id || "",
+    user?.id || "",
+    user?.name || "",
+    editorContainerRef
+  );
+
+  const { isSpotlightActive, remoteSpotlights, activateSpotlight, deactivateSpotlight, handleSpotlightMouseMove } = useSpotlight(
+    id || "",
+    user?.id || "",
+    user?.name || "",
+    userColor
+  );
+
+  const { isHuddleActive, isInHuddle, participants, isMuted, activeSpeakers, startHuddle, joinHuddle, leaveHuddle, toggleMute } = useHuddle(
+    id || "",
+    user?.id || "",
+    user?.name || ""
+  );
+
+  // Sync speaking status → cursor glow
+  React.useEffect(() => {
+    activeSpeakers.forEach((uid) => updateSpeakingStatus(uid, true));
+  }, [activeSpeakers]);
 
   // Fetch initial doc
   React.useEffect(() => {
@@ -102,9 +140,7 @@ export function EditorPage() {
     const socket = getSocket();
     socketRef.current = socket;
     
-    // Ensure user is identified for notifications
     socket.emit('identify-user', user.id);
-
     socket.emit("join-document", id, user.id);
 
     socket.on("user-joined", (userId: string) => {
@@ -181,7 +217,6 @@ export function EditorPage() {
 
   React.useEffect(() => {
     if (activeTab === "chat") {
-      // Small delay to allow animation to complete
       setTimeout(scrollToBottom, 100);
     }
   }, [messages, activeTab]);
@@ -198,10 +233,7 @@ export function EditorPage() {
   const saveDoc = async (content: string, title?: string) => {
     setSaving(true);
     try {
-      await API.put(`/api/documents/${id}`, {
-        content,
-        title
-      });
+      await API.put(`/api/documents/${id}`, { content, title });
     } catch (err) {
       console.error(err);
     } finally {
@@ -215,11 +247,16 @@ export function EditorPage() {
       const content = editorRef.current.innerHTML;
       socketRef.current?.emit("send-changes", id, content);
       
-      // Debounce saving
       clearTimeout((window as any).saveTimeout);
       (window as any).saveTimeout = setTimeout(() => {
         saveDoc(content);
       }, 2000);
+    }
+  };
+
+  const handleEditorMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (isSpotlightActive && editorContainerRef.current) {
+      handleSpotlightMouseMove(e.nativeEvent, editorContainerRef);
     }
   };
 
@@ -257,8 +294,6 @@ export function EditorPage() {
     socketRef.current?.emit("typing-end", id);
   };
 
-
-
   const exportDOCX = () => {
     if (!editorRef.current) return;
     const content = editorRef.current.innerHTML;
@@ -266,13 +301,11 @@ export function EditorPage() {
     const footer = "</body></html>";
     const sourceHTML = header + content + footer;
     
-    const blob = new Blob(['\ufeff', sourceHTML], {
-      type: 'application/msword'
-    });
-    
+    const blob = new Blob(['\ufeff', sourceHTML], { type: 'application/msword' });
     saveAs(blob, `${doc?.title || 'document'}.doc`);
     toast.success("DOCX exported successfully");
   };
+
   const handleShare = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!shareEmail.trim()) return;
@@ -291,6 +324,15 @@ export function EditorPage() {
     } finally {
       setShareLoading(false);
     }
+  };
+
+  // Insert AI text into editor at current cursor or end
+  const handleInsertAIText = (text: string) => {
+    if (!editorRef.current || !canEdit) return;
+    editorRef.current.focus();
+    document.execCommand("insertHTML", false, text.replace(/\n/g, "<br>"));
+    handleEditorInput();
+    toast.success("Text inserted into document");
   };
 
   if (loading) {
@@ -315,12 +357,27 @@ export function EditorPage() {
     <div className="h-screen flex flex-col overflow-hidden bg-white dark:bg-[#0F0D1F] transition-colors duration-300">
       {/* 1. FIXED TOP TOOLBAR & HEADER */}
       <div className="flex-shrink-0 flex flex-col z-40 bg-white dark:bg-[#0F0D1F] border-b border-gray-200 dark:border-white/10 shadow-sm">
+        {/* Huddle notification bar — shown when huddle is active but user is not in it */}
+        <HuddlePanel
+          documentId={id || ""}
+          userId={user?.id || ""}
+          userName={user?.name || ""}
+          isHuddleActive={isHuddleActive}
+          isInHuddle={isInHuddle}
+          participants={participants}
+          isMuted={isMuted}
+          activeSpeakers={activeSpeakers}
+          onStart={startHuddle}
+          onJoin={joinHuddle}
+          onLeave={leaveHuddle}
+          onToggleMute={toggleMute}
+        />
+
         {/* Title & Actions Bar */}
         <div className="h-14 px-3 sm:px-4 flex items-center justify-between gap-2">
           {/* LEFT: back + title */}
           <div className="flex items-center gap-1 sm:gap-3 min-w-0 flex-1">
-            {/* On mobile: if chat is open, back button closes chat; otherwise goes to dashboard */}
-            {activeTab === "chat" ? (
+            {activeTab !== null ? (
               <button
                 onClick={() => setActiveTab(null)}
                 className="p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors md:hidden flex-shrink-0"
@@ -332,13 +389,13 @@ export function EditorPage() {
               to="/dashboard"
               className={cn(
                 "p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors flex-shrink-0",
-                activeTab === "chat" ? "hidden md:flex" : "flex"
+                activeTab !== null ? "hidden md:flex" : "flex"
               )}
             >
               <ChevronLeft className="w-5 h-5 text-gray-500 dark:text-gray-400" />
             </Link>
 
-            {/* Title + status — constrained so it never pushes right buttons off */}
+            {/* Title + status */}
             <div className="flex flex-col min-w-0">
               {isEditingTitle ? (
                 <input
@@ -357,7 +414,6 @@ export function EditorPage() {
                   {doc.title}
                 </h2>
               )}
-              {/* Status text — hidden on small screens to save space */}
               <div className="hidden sm:flex items-center gap-2 text-[10px] uppercase tracking-wider font-semibold">
                 {saving ? (
                   <span className="text-indigo-500 flex items-center gap-1">
@@ -371,8 +427,9 @@ export function EditorPage() {
             </div>
           </div>
 
-          {/* RIGHT: actions — tightly packed on mobile */}
+          {/* RIGHT: actions */}
           <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+            {/* Export */}
             <div className="relative group">
               <Button variant="glass" size="sm" className="px-2 sm:px-3">
                 <Download className="w-4 h-4 sm:mr-2" />
@@ -385,6 +442,23 @@ export function EditorPage() {
               </div>
             </div>
 
+            {/* Spotlight toggle */}
+            <Button
+              variant="glass"
+              size="sm"
+              onClick={() => isSpotlightActive ? deactivateSpotlight() : activateSpotlight()}
+              className={cn(
+                "px-2 sm:px-3",
+                isSpotlightActive && "bg-amber-50 dark:bg-amber-900/20 border-amber-300 dark:border-amber-700 text-amber-600 dark:text-amber-400"
+              )}
+              title="Spotlight — laser pointer for all collaborators"
+            >
+              <Crosshair className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Spotlight</span>
+              {isSpotlightActive && <span className="ml-1 w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />}
+            </Button>
+
+            {/* Chat toggle */}
             <Button
               variant="glass"
               size="sm"
@@ -400,6 +474,21 @@ export function EditorPage() {
               )}
             </Button>
 
+            {/* AI Assistant toggle */}
+            <Button
+              variant="glass"
+              size="sm"
+              onClick={() => setActiveTab(activeTab === "ai" ? null : "ai")}
+              className={cn(
+                "px-2 sm:px-3",
+                activeTab === "ai" && "bg-violet-50 dark:bg-violet-900/20 border-violet-300 dark:border-violet-700 text-violet-600 dark:text-violet-400"
+              )}
+              title="AI Collaboration Assistant"
+            >
+              <Sparkles className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">AI</span>
+            </Button>
+
             {userRole === "owner" && (
               <Button size="sm" onClick={() => setIsShareModalOpen(true)} className="bg-indigo-600 hover:bg-indigo-700 px-2 sm:px-3">
                 <Share2 className="w-4 h-4 sm:mr-2" />
@@ -407,13 +496,12 @@ export function EditorPage() {
               </Button>
             )}
 
-            {/* Divider + Avatar — hidden on mobile to keep bar clean */}
             <div className="hidden sm:block w-px h-6 bg-gray-200 dark:bg-white/10 mx-1" />
             <Avatar fallback={user?.name?.[0]?.toUpperCase() || "U"} size="sm" className="hidden sm:flex" />
           </div>
         </div>
 
-        {/* Formatting Toolbar (ALWAYS VISIBLE) */}
+        {/* Formatting Toolbar */}
         <div className="h-12 px-4 bg-gray-50 dark:bg-[#1E1B4B]/50 border-t border-gray-200 dark:border-white/10 flex items-center gap-1 overflow-x-auto no-scrollbar">
           <div className="flex items-center bg-white dark:bg-[#0F0D1F] border border-gray-200 dark:border-white/10 rounded-md p-0.5 mr-2">
             <select 
@@ -453,24 +541,49 @@ export function EditorPage() {
           
           <ToolbarButton icon={List} disabled={!canEdit} active={activeFormats.has("insertUnorderedList")} onClick={() => execCommand("insertUnorderedList")} />
           <ToolbarButton icon={ListOrdered} disabled={!canEdit} active={activeFormats.has("insertOrderedList")} onClick={() => execCommand("insertOrderedList")} />
+
+          {/* Huddle start button in toolbar (only if no active huddle) */}
+          {!isHuddleActive && (
+            <>
+              <div className="w-px h-6 bg-gray-300 dark:bg-white/10 mx-1" />
+              <button
+                onClick={startHuddle}
+                className="flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:hover:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 transition-colors"
+                title="Start a voice huddle with collaborators"
+              >
+                <Mic className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Start Huddle</span>
+              </button>
+            </>
+          )}
         </div>
       </div>
 
+      {/* MAIN CONTENT AREA */}
       <div className="flex-1 flex overflow-hidden relative bg-gray-100 dark:bg-[#0A0914]">
-        {/* 2. MIDDLE - DOCUMENT EDITOR */}
-        <div className="flex-1 overflow-auto p-4 md:p-10 flex flex-col items-center">
-          <div className="max-w-4xl w-full bg-white dark:bg-[#1E1B4B] min-h-[600px] md:min-h-[1056px] rounded-sm shadow-2xl p-6 sm:p-12 md:p-[96px] mb-10 transition-all duration-300 ring-1 ring-gray-200 dark:ring-white/10">
+        {/* 2. DOCUMENT EDITOR */}
+        <div
+          ref={editorContainerRef}
+          className="flex-1 overflow-auto p-4 md:p-10 flex flex-col items-center relative"
+          onMouseMove={handleEditorMouseMove}
+        >
+          {/* Cursor Overlay — absolutely positioned over editor container */}
+          <CursorOverlay cursors={remoteCursors} editorRef={editorContainerRef} />
+          {/* Spotlight Overlay */}
+          <SpotlightOverlay spotlights={remoteSpotlights} />
+
+          <div className="max-w-4xl w-full bg-white dark:bg-[#1E1B4B] min-h-[600px] md:min-h-[1056px] rounded-sm shadow-2xl p-6 sm:p-12 md:p-[96px] mb-10 transition-all duration-300 ring-1 ring-gray-200 dark:ring-white/10 relative">
             <div
               ref={editorRef}
               contentEditable={canEdit}
               onInput={handleEditorInput}
               className="w-full min-h-full outline-none text-gray-800 dark:text-gray-100 text-[16px] leading-[1.6] prose max-w-none focus:ring-0 dark:prose-invert"
-              style={{ fontFamily: 'Inter, sans-serif' }}
+              style={{ fontFamily: 'Inter, sans-serif', cursor: isSpotlightActive ? 'crosshair' : 'text' }}
             />
           </div>
         </div>
 
-        {/* 3. SIDE PANEL - CHAT WINDOW */}
+        {/* 3. SIDE PANEL — CHAT or AI */}
         <AnimatePresence>
           {activeTab === "chat" && (
             <motion.div 
@@ -525,9 +638,19 @@ export function EditorPage() {
               </form>
             </motion.div>
           )}
+
+          {activeTab === "ai" && (
+            <AIAssistantPanel
+              isOpen={activeTab === "ai"}
+              onClose={() => setActiveTab(null)}
+              documentContent={editorRef.current?.innerHTML || ""}
+              onInsert={handleInsertAIText}
+            />
+          )}
         </AnimatePresence>
       </div>
 
+      {/* Share Modal */}
       <Modal isOpen={isShareModalOpen} onClose={() => setIsShareModalOpen(false)} title="Share Document">
         <form onSubmit={handleShare} className="space-y-4">
           <div>

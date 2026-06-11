@@ -3,11 +3,15 @@ const Message = require('../models/Message');
 const Notification = require('../models/Notification');
 const User = require('../models/User');
 const { sendPushNotification } = require('../utils/webpush');
+
+// In-memory huddle state: documentId -> Map<userId, {userId, userName, socketId}>
+const activeHuddles = new Map();
+
 module.exports = function (io) {
   io.on('connection', (socket) => {
     console.log('New client connected', socket.id);
 
-    // Identify user and join their private notification room
+    // ─── Identify user and join their private notification room ──────────────
     socket.on('identify-user', (userId) => {
       if (!userId) return;
       // Leave any existing user rooms (session isolation)
@@ -20,19 +24,19 @@ module.exports = function (io) {
       console.log(`Socket ${socket.id} identified as user ${userId}`);
     });
 
-    // Document Collaboration
+    // ─── Document Collaboration ───────────────────────────────────────────────
     socket.on('join-document', async (documentId, userId) => {
       socket.join(documentId);
       console.log(`User ${userId} joined document ${documentId}`);
-
       // Notify others
       socket.to(documentId).emit('user-joined', userId);
+    });
 
-      // Save user to a local memory presence list if needed
+    socket.on('leave-document', (documentId) => {
+      socket.leave(documentId);
     });
 
     socket.on('send-changes', (documentId, delta) => {
-      // delta is the content change
       socket.to(documentId).emit('receive-changes', delta);
     });
 
@@ -44,7 +48,7 @@ module.exports = function (io) {
       }
     });
 
-    // Team Chat
+    // ─── Team Chat ────────────────────────────────────────────────────────────
     socket.on('send-message', async (data) => {
       try {
         const { documentId, senderId, message, senderName } = data;
@@ -66,9 +70,7 @@ module.exports = function (io) {
           createdAt: newMessage.createdAt
         });
 
-        // --- REAL-TIME NOTIFICATIONS ---
-
-        // Find document to get collaborators and owner
+        // ── Real-time Notifications ──────────────────────────────────────────
         const doc = await Document.findById(documentId).populate('collaborators.userId', 'name');
         if (doc) {
           const recipients = [];
@@ -86,18 +88,7 @@ module.exports = function (io) {
             }
           });
 
-          // NUCLEAR OPTION: Global broadcast to ensure delivery (EXCLUDING SENDER)
-          socket.broadcast.emit('new-notification', {
-            _id: `temp_${Date.now()}`,
-            title: `New Message in ${doc.title}`,
-            message: `${senderName}: ${message.substring(0, 50)}...`,
-            documentId: documentId,
-            fromUser: { _id: senderId, name: senderName },
-            createdAt: new Date().toISOString(),
-            read: false
-          });
-
-          // Also do the private ones for persistence
+          // Emit targeted notifications only (no global broadcast)
           for (const recipientId of recipients) {
             const notif = new Notification({
               userId: recipientId,
@@ -109,7 +100,7 @@ module.exports = function (io) {
             });
             await notif.save();
             io.to(`user_${recipientId}`).emit('new-notification', notif);
-            
+
             // Send Native Web Push for offline devices
             const recipientUser = await User.findById(recipientId);
             if (recipientUser) {
@@ -134,9 +125,101 @@ module.exports = function (io) {
       socket.to(documentId).emit('user-stopped-typing');
     });
 
+    // ─── Cursor Presence ──────────────────────────────────────────────────────
+    socket.on('cursor-move', ({ documentId, userId, userName, x, y, color }) => {
+      socket.to(documentId).emit('cursor-updated', { userId, userName, x, y, color });
+    });
+
+    socket.on('cursor-leave', ({ documentId, userId }) => {
+      socket.to(documentId).emit('cursor-removed', { userId });
+    });
+
+    // ─── Spotlight ────────────────────────────────────────────────────────────
+    socket.on('spotlight-activate', ({ documentId, userId, userName, color }) => {
+      socket.to(documentId).emit('spotlight-on', { userId, userName, color });
+    });
+
+    socket.on('spotlight-move', ({ documentId, userId, x, y }) => {
+      socket.to(documentId).emit('spotlight-moved', { userId, x, y });
+    });
+
+    socket.on('spotlight-deactivate', ({ documentId, userId }) => {
+      socket.to(documentId).emit('spotlight-off', { userId });
+    });
+
+    // ─── Huddle (Voice/Video) ─────────────────────────────────────────────────
+    socket.on('huddle-start', ({ documentId, userId, userName }) => {
+      if (!activeHuddles.has(documentId)) {
+        activeHuddles.set(documentId, new Map());
+      }
+      const huddle = activeHuddles.get(documentId);
+      huddle.set(userId, { userId, userName, socketId: socket.id });
+      io.to(documentId).emit('huddle-started', {
+        initiatorId: userId,
+        initiatorName: userName,
+        documentId
+      });
+    });
+
+    socket.on('huddle-join', ({ documentId, userId, userName }) => {
+      if (!activeHuddles.has(documentId)) {
+        activeHuddles.set(documentId, new Map());
+      }
+      const huddle = activeHuddles.get(documentId);
+      const existingPeers = Array.from(huddle.values());
+      huddle.set(userId, { userId, userName, socketId: socket.id });
+      // Tell the joining user who is already in the huddle
+      socket.emit('peer-joined', { peers: existingPeers });
+      // Tell existing peers that someone new joined
+      socket.to(documentId).emit('new-peer', { userId, userName, socketId: socket.id });
+    });
+
+    socket.on('huddle-leave', ({ documentId, userId }) => {
+      if (activeHuddles.has(documentId)) {
+        const huddle = activeHuddles.get(documentId);
+        huddle.delete(userId);
+        io.to(documentId).emit('peer-left', { userId });
+        if (huddle.size === 0) {
+          activeHuddles.delete(documentId);
+          io.to(documentId).emit('huddle-ended');
+        }
+      }
+    });
+
+    // ─── WebRTC Signalling ────────────────────────────────────────────────────
+    socket.on('webrtc-offer', ({ to, offer, from }) => {
+      io.to(`user_${to}`).emit('webrtc-offer', { offer, from });
+    });
+
+    socket.on('webrtc-answer', ({ to, answer, from }) => {
+      io.to(`user_${to}`).emit('webrtc-answer', { answer, from });
+    });
+
+    socket.on('webrtc-ice-candidate', ({ to, candidate, from }) => {
+      io.to(`user_${to}`).emit('webrtc-ice-candidate', { candidate, from });
+    });
+
+    socket.on('huddle-speaking', ({ documentId, userId, isSpeaking }) => {
+      socket.to(documentId).emit('peer-speaking', { userId, isSpeaking });
+    });
+
+    // ─── Disconnect ───────────────────────────────────────────────────────────
     socket.on('disconnect', () => {
       console.log('Client disconnected', socket.id);
-      // emit user-left if we track which rooms they were in
+
+      // Clean up any huddle this socket was part of
+      activeHuddles.forEach((huddle, documentId) => {
+        huddle.forEach((participant, userId) => {
+          if (participant.socketId === socket.id) {
+            huddle.delete(userId);
+            io.to(documentId).emit('peer-left', { userId });
+            if (huddle.size === 0) {
+              activeHuddles.delete(documentId);
+              io.to(documentId).emit('huddle-ended');
+            }
+          }
+        });
+      });
     });
   });
 };

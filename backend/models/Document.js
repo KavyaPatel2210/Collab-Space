@@ -7,7 +7,8 @@ const documentSchema = new mongoose.Schema({
   collaborators: [{
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     role: { type: String, enum: ['owner', 'editor', 'viewer'], required: true }
-  }]
+  }],
+  teamId: { type: mongoose.Schema.Types.ObjectId, ref: 'Team', default: null }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Document', documentSchema);

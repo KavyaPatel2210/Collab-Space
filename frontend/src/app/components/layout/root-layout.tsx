@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Outlet, useLocation, Link, useNavigate } from "react-router";
-import { LogOut, LayoutDashboard, Settings, FileText, Share2, Bell, Menu, Sun, Moon, Check, ExternalLink, X, MessageCircle, Download } from "lucide-react";
+import { LogOut, LayoutDashboard, Settings, FileText, Share2, Bell, Menu, Sun, Moon, Check, ExternalLink, X, MessageCircle, Download, Users } from "lucide-react";
 import { cn, Avatar, Badge } from "../ui-components";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "../../contexts/AuthContext";
@@ -41,6 +41,7 @@ export function RootLayout() {
   const isLogin = location.pathname === "/login";
   const isDashboard = location.pathname === "/dashboard";
   const isEditor = location.pathname.startsWith("/editor/");
+  const isTeams = location.pathname === "/teams" || location.pathname.startsWith("/teams/");
 
   // Close notification panel on click outside
   React.useEffect(() => {
@@ -111,7 +112,7 @@ export function RootLayout() {
     );
   }
 
-  // Dashboard & Editor — Floating Modular Layout
+  // Dashboard, Editor & Teams — Floating Modular Layout
   return (
     <div className={cn("flex flex-col h-screen aurora-bg grain-texture overflow-hidden", isDarkMode && "dark")}>
       {/* ──── Floating Top Nav Bar ──── */}
@@ -133,6 +134,7 @@ export function RootLayout() {
             <div className="flex items-center gap-1 glass-panel rounded-[12px] px-1 py-0.5">
               <NavTab to="/dashboard?tab=my-documents" active={isDashboard && (location.search === "" || location.search.includes("my-documents"))} icon={FileText} label="Documents" />
               <NavTab to="/dashboard?tab=shared-with-me" active={location.search.includes("shared-with-me")} icon={Share2} label="Shared" />
+              <NavTab to="/teams" active={isTeams} icon={Users} label="Teams" />
               <NavTab to="/dashboard?tab=settings" active={location.search.includes("settings")} icon={Settings} label="Settings" />
             </div>
           </div>
@@ -335,6 +337,13 @@ export function RootLayout() {
                 onClick={() => setIsMobileSidebarOpen(false)}
               />
               <MobileSidebarLink
+                icon={Users}
+                label="Teams"
+                to="/teams"
+                active={isTeams}
+                onClick={() => setIsMobileSidebarOpen(false)}
+              />
+              <MobileSidebarLink
                 icon={Settings}
                 label="Settings"
                 to="/dashboard?tab=settings"
@@ -376,6 +385,7 @@ export function RootLayout() {
               <SidebarIcon icon={LayoutDashboard} to="/dashboard" active={isDashboard && !location.search.includes("settings")} tooltip="Dashboard" />
               <SidebarIcon icon={FileText} to="/dashboard?tab=my-documents" active={isDashboard && (location.search === "" || location.search.includes("my-documents"))} tooltip="My Docs" />
               <SidebarIcon icon={Share2} to="/dashboard?tab=shared-with-me" active={location.search.includes("shared-with-me")} tooltip="Shared" />
+              <SidebarIcon icon={Users} to="/teams" active={isTeams} tooltip="Teams" />
               <div className="flex-1" />
               <SidebarIcon icon={Settings} to="/dashboard?tab=settings" active={location.search.includes("settings")} tooltip="Settings" />
 
@@ -413,6 +423,12 @@ export function RootLayout() {
             active={location.search.includes("shared-with-me")}
           />
           <MobileBottomTab
+            icon={Users}
+            label="Teams"
+            to="/teams"
+            active={isTeams}
+          />
+          <MobileBottomTab
             icon={Settings}
             label="Settings"
             to="/dashboard?tab=settings"
@@ -429,7 +445,7 @@ export function RootLayout() {
               <div className="w-1.5 h-1.5 rounded-full bg-[#6EE7B7]" />
               Connected
             </span>
-            <span>CollabSpace v1.0</span>
+            <span>CollabSpace v2.0</span>
           </div>
           <div className="flex items-center gap-4 text-[11px] text-[#6B7280] dark:text-[#9CA3AF]">
             <span>{displayName}</span>
