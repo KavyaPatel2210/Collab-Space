@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import API from '../lib/api';
 
 export interface Team {
@@ -27,6 +27,10 @@ export function useTeams() {
       setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    fetchTeams();
+  }, [fetchTeams]);
 
   const createTeam = async (name: string, description: string) => {
     const res = await API.post('/api/teams', { name, description });
